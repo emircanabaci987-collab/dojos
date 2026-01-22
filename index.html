@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Dojo Strike: Pro Edition</title>
+
+  <style>
+    :root {
+      --bg: #f4e9e2;
+      --striker: #2d3436;
+      --target: #e74c3c;
+      --text: #2d3436;
+      --stage-bg: rgba(255,255,255,0.3);
+      --border: #2d3436;
+    }
+
+    *{
+      margin:0; padding:0; box-sizing:border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+    }
+
+    body{
+      background: var(--bg);
+      height: 100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      transition: background-color .8s ease, color .8s ease;
+    }
+
+    #hud{
+      width: 320px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom: 12px;
+      font-weight: 900;
+      font-size: 1.3rem;
+    }
+
+    #hud small{
+      display:block;
+      font-weight:700;
+      font-size:.8rem;
+      opacity:.7;
+      margin-top:2px;
+    }
+
+    #stage{
+      position:relative;
+      width: 320px;
+      height: 380px;
+      background: var(--stage-bg);
+      border: 5px solid var(--border);
+      border-radius: 22px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      transition: border-color .8s ease;
+    }
+
+    #target{
+      position:absolute;
+      width:16px;
+      height:100%;
+      background: var(--target);
+      left:50%;
+      top:0;
+      transform: translateX(-50%);
+      z-index:2;
+      box-shadow: 0 0 18px var(--target);
+      transition: background-color .8s ease, width .25s ease;
+    }
+
+    #striker{
+      position:absolute;
+      width:34px;
+      height:80px;
+      background: var(--striker);
+      top:150px;
+      left:0;
+      border-radius: 10px;
+      z-index:3;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      will-change: transform;
+    }
+
+    #action-pad{
+      width: 320px;
+      height: 110px;
+      margin-top: 18px;
+      background: var(--striker);
+      border:none;
+      border-radius: 22px;
+      color:white;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 1.8rem;
+      font-weight: 900;
+      cursor:pointer;
+      box-shadow: 0 8px 0 rgba(0,0,0,0.22);
+      transition: transform .08s ease, background-color .8s ease;
+    }
+    #action-pad:active{
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.22);
+    }
+
+    .overlay{
+      position:absolute;
+      inset:0;
+      background: var(--bg);
+      color: var(--text);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding: 18px;
+      z-index:10;
+    }
+
+    #msg{
+      background: rgba(0,0,0,0.92);
+      color:white;
+      display:none;
+    }
+
+    .btn{
+      margin-top: 16px;
+      padding: 14px 34px;
+      background: var(--target);
+      border:none;
+      color:white;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight: 900;
+      font-size: 1.05rem;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+    }
+
+    .mini{
+      font-size: .95rem;
+      opacity:.85;
+      margin-top: 6px;
+      line-height: 1.25rem;
+    }
+
+    /* Leaderboard */
+    #leaderboard{
+      width: 320px;
+      margin-top: 14px;
+      background: rgba(255,255,255,0.55);
+      border: 2px solid rgba(0,0,0,0.08);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    }
+    #leaderboard h3{
+      font-size: 1rem;
+      margin-bottom: 8px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    #leaderboard h3 span{
+      opacity:.7;
+      font-size:.85rem;
+      font-weight:800;
+    }
+    #lb-list{
+      list-style:none;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-height: 160px;
+      overflow:auto;
+      padding-right: 4px;
+    }
+    .lb-item{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding: 10px 10px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.06);
+      font-weight: 800;
+    }
+    .lb-rank{
+      opacity:.7;
+      width: 34px;
+      text-align:left;
+    }
+    .lb-name{
+      flex:1;
+      text-align:left;
+      padding: 0 8px;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 160px;
+    }
+    .lb-score{
+      font-weight: 900;
+    }
+
+    /* Effects */
+    @keyframes shake{
+      0%{ transform: translate(0,0); }
+      25%{ transform: translate(4px, 4px); }
+      50%{ transform: translate(-4px, -4px); }
+      75%{ transform: translate(4px, -4px); }
+      100%{ transform: translate(0,0); }
+    }
+    .hit-shake{ animation: shake .15s ease-out; }
+
+    @keyframes hit-glow{
+      0%{ filter: brightness(1); }
+      50%{ filter: brightness(2.2); }
+      100%{ filter: brightness(1); }
+    }
+    .hit-glow{ animation: hit-glow .3s ease-out; }
+
+    /* Name input modal */
+    #name-modal{
+      display:none;
+      background: rgba(0,0,0,0.86);
+      color:white;
+    }
+    .modal-card{
+      width: 100%;
+      max-width: 280px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+      backdrop-filter: blur(8px);
+    }
+    .modal-card h2{
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+    }
+    .modal-card input{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: none;
+      outline:none;
+      font-size: 1rem;
+      margin-top: 10px;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      margin-top: 10px;
+    }
+    .row button{
+      flex:1;
+      padding: 12px;
+      border-radius: 14px;
+      border:none;
+      font-weight: 900;
+      cursor:pointer;
+    }
+    .primary{
+      background: var(--target);
+      color:white;
+    }
+    .ghost{
+      background: rgba(255,255,255,0.18);
+      color:white;
+      border: 1px solid rgba(255,255,255,0.22);
+    }
+
+    #net-status{
+      font-size: .85rem;
+      opacity:.8;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="hud">
+    <div>
+      <div id="score">0</div>
+      <small>Skor</small>
+    </div>
+    <div style="text-align:right">
+      <div id="status">HAZIR</div>
+      <small id="best">Best: 0</small>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="start-screen" class="overlay">
+      <h1 style="font-size:2.1rem; margin-bottom:6px;">DOJO STRIKE</h1>
+      <p class="mini">Tek dokunuşla durdur. Hedefe en yakın vur!</p>
+      <button class="btn" id="start-btn">BAŞLA</button>
+      <div id="net-status">Bağlanıyor...</div>
+    </div>
+
+    <div id="target"></div>
+    <div id="striker"></div>
+
+    <div id="msg" class="overlay">
+      <h1 style="font-size:2.4rem; margin-bottom:6px;">EYVAH!</h1>
+      <p id="final-score" style="font-size:1.6rem; margin-bottom:6px;">Skor: 0</p>
+      <p class="mini">Skorunu kaydedelim mi?</p>
+      <button class="btn" id="save-score-btn">PUANI KAYDET</button>
+      <button class="btn" id="reset-btn" style="background: rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.22);">
+        TEKRARLA
+      </button>
+    </div>
+
+    <div id="name-modal" class="overlay">
+      <div class="modal-card">
+        <h2>İsmini yaz 🏆</h2>
+        <div class="mini">Skor: <span id="modal-score">0</span></div>
+        <input id="player-name" maxlength="16" placeholder="Örn: Emircan" />
+        <div class="row">
+          <button class="ghost" id="cancel-save">Vazgeç</button>
+          <button class="primary" id="confirm-save">Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="action-pad">VUR !</div>
+
+  <div id="leaderboard">
+    <h3>
+      <div>🏆 Top 10</div>
+      <span id="lb-refresh">yükleniyor...</span>
+    </h3>
+    <ol id="lb-list"></ol>
+  </div>
+
+  <!-- Firebase (CDN) -->
+  <script type="module">
+    // Firebase CDN imports (tek dosyada çalışır)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    // === Senin Firebase config'in ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyDp6o7nrYmA43rCPowNryAdHvM3iwePDOM",
+      authDomain: "dojo-c84ac.firebaseapp.com",
+      projectId: "dojo-c84ac",
+      storageBucket: "dojo-c84ac.firebasestorage.app",
+      messagingSenderId: "760637895219",
+      appId: "1:760637895219:web:20c9be3b4293f3bf1ae946",
+      measurementId: "G-9MGKPJ2S23"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ======= OYUN KODU =======
+    const striker = document.getElementById("striker");
+    const target = document.getElementById("target");
+    const stage = document.getElementById("stage");
+    const scoreEl = document.getElementById("score");
+    const statusEl = document.getElementById("status");
+    const bestEl = document.getElementById("best");
+
+    const msgBox = document.getElementById("msg");
+    const startScreen = document.getElementById("start-screen");
+    const actionPad = document.getElementById("action-pad");
+    const root = document.documentElement;
+
+    const saveScoreBtn = document.getElementById("save-score-btn");
+    const resetBtn = document.getElementById("reset-btn");
+
+    const nameModal = document.getElementById("name-modal");
+    const modalScore = document.getElementById("modal-score");
+    const playerNameInput = document.getElementById("player-name");
+    const cancelSave = document.getElementById("cancel-save");
+    const confirmSave = document.getElementById("confirm-save");
+
+    const lbList = document.getElementById("lb-list");
+    const lbRefresh = document.getElementById("lb-refresh");
+    const netStatus = document.getElementById("net-status");
+
+    const START_SPEED = 3.0;
+    const START_WIDTH = 16;
+
+    const STAGE_W = 320;
+    const STRIKER_W = 34;
+    const MAX_X = STAGE_W - STRIKER_W;
+
+    let bestLocal = Number(localStorage.getItem("dojo_best") || "0");
+    bestEl.textContent = "Best: " + bestLocal;
+
+    let state = {
+      active: false,
+      x: 0,
+      dir: 1,
+      speed: START_SPEED,
+      score: 0,
+      lastUpdate: 0,
+      targetWidth: START_WIDTH,
+      canSave: false
+    };
+
+    function changeTheme() {
+      const hue = Math.floor(Math.random() * 360);
+      root.style.setProperty("--bg", `hsl(${hue}, 40%, 90%)`);
+      root.style.setProperty("--striker", `hsl(${hue}, 80%, 15%)`);
+      root.style.setProperty("--target", `hsl(${hue}, 70%, 50%)`);
+      root.style.setProperty("--border", `hsl(${hue}, 80%, 15%)`);
+      root.style.setProperty("--text", `hsl(${hue}, 80%, 15%)`);
+    }
+
+    function loop(timestamp) {
+      if (!state.active) return;
+
+      if (!state.lastUpdate) state.lastUpdate = timestamp;
+      const delta = Math.min((timestamp - state.lastUpdate) / 16.67, 2);
+      state.lastUpdate = timestamp;
+
+      state.x += state.speed * state.dir * delta;
+
+      if (state.x >= MAX_X) { state.x = MAX_X; state.dir = -1; }
+      if (state.x <= 0) { state.x = 0; state.dir = 1; }
+
+      striker.style.transform = `translateX(${state.x}px)`;
+      requestAnimationFrame(loop);
+    }
+
+    function startGame() {
+      startScreen.style.display = "none";
+      msgBox.style.display = "none";
+      nameModal.style.display = "none";
+
+      state.active = true;
+      state.lastUpdate = 0;
+      requestAnimationFrame(loop);
+    }
+
+    function handleInput(e) {
+      if (e) e.preventDefault();
+      if (!state.active) return;
+
+      const strikerCenter = state.x + (STRIKER_W / 2);
+      const targetCenter = STAGE_W / 2;
+      const diff = Math.abs(strikerCenter - targetCenter);
+
+      const tolerance = (state.targetWidth / 2) + (STRIKER_W / 2);
+
+      if (diff < tolerance) {
+        state.score++;
+        state.speed += 0.15;
+        scoreEl.textContent = state.score;
+
+        statusEl.textContent = "VURDUN!";
+
+        if (state.score > bestLocal) {
+          bestLocal = state.score;
+          localStorage.setItem("dojo_best", String(bestLocal));
+          bestEl.textContent = "Best: " + bestLocal;
+        }
+
+        if (state.score > 0 && state.score % 20 === 0) {
+          state.targetWidth += 8;
+          target.style.width = state.targetWidth + "px";
+          statusEl.textContent = "ALAN BÜYÜDÜ!";
+        }
+
+        stage.classList.remove("hit-shake");
+        void stage.offsetWidth;
+        stage.classList.add("hit-shake");
+
+        target.classList.remove("hit-glow");
+        void target.offsetWidth;
+        target.classList.add("hit-glow");
+
+        if (state.score % 3 === 0 && state.score % 20 !== 0) {
+          changeTheme();
+          statusEl.textContent = "MÜKEMMEL!";
+        }
+      } else {
+        gameOver();
+      }
+    }
+
+    function gameOver() {
+      state.active = false;
+      state.canSave = true;
+
+      document.getElementById("final-score").textContent = "Skorun: " + state.score;
+      msgBox.style.display = "flex";
+      statusEl.textContent = "BİTTİ";
+    }
+
+    function resetGame() {
+      state.active = true;
+      state.score = 0;
+      state.speed = START_SPEED;
+      state.x = 0;
+      state.targetWidth = START_WIDTH;
+      state.lastUpdate = 0;
+      state.canSave = false;
+
+      target.style.width = START_WIDTH + "px";
+      scoreEl.textContent = "0";
+      statusEl.textContent = "HAYDİ!";
+
+      msgBox.style.display = "none";
+      nameModal.style.display = "none";
+
+      requestAnimationFrame(loop);
+    }
+
+    // ======= LEADERBOARD =======
+    async function loadLeaderboard() {
+      try {
+        lbRefresh.textContent = "yükleniyor...";
+        lbList.innerHTML = "";
+
+        const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
+        const snap = await getDocs(q);
+
+        let i = 1;
+        snap.forEach((doc) => {
+          const data = doc.data();
+          const li = document.createElement("li");
+          li.className = "lb-item";
+          li.innerHTML = `
+            <div class="lb-rank">#${i}</div>
+            <div class="lb-name">${escapeHtml(String(data.name || "Anon"))}</div>
+            <div class="lb-score">${Number(data.score || 0)}</div>
+          `;
+          lbList.appendChild(li);
+          i++;
+        });
+
+        if (i === 1) {
+          const li = document.createElement("li");
+          li.className = "lb-item";
+          li.innerHTML = `<div class="lb-name">Henüz skor yok 😄</div><div class="lb-score">0</div>`;
+          lbList.appendChild(li);
+        }
+
+        lbRefresh.textContent = "güncel";
+        netStatus.textContent = "Online ✅";
+      } catch (err) {
+        console.log(err);
+        lbRefresh.textContent = "hata";
+        netStatus.textContent = "Bağlantı yok / Rules kapalı ❌";
+      }
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    async function saveScore(name, score) {
+      // mini koruma
+      name = (name || "").trim().slice(0, 16);
+      if (!name) name = "Anon";
+
+      if (!Number.isFinite(score) || score < 0) return;
+
+      await addDoc(collection(db, "scores"), {
+        name,
+        score,
+        createdAt: serverTimestamp()
+      });
+    }
+
+    // ======= EVENTLER =======
+    document.getElementById("start-btn").addEventListener("click", (e) => {
+      e.preventDefault();
+      startGame();
+    });
+
+    document.getElementById("start-btn").addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      startGame();
+    }, { passive: false });
+
+    actionPad.addEventListener("touchstart", handleInput, { passive: false });
+    actionPad.addEventListener("mousedown", handleInput);
+
+    resetBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      resetGame();
+    });
+    resetBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      resetGame();
+    }, { passive: false });
+
+    saveScoreBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (!state.canSave) return;
+      modalScore.textContent = String(state.score);
+      playerNameInput.value = localStorage.getItem("dojo_name") || "";
+      nameModal.style.display = "flex";
+      playerNameInput.focus();
+    });
+
+    saveScoreBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      if (!state.canSave) return;
+      modalScore.textContent = String(state.score);
+      playerNameInput.value = localStorage.getItem("dojo_name") || "";
+      nameModal.style.display = "flex";
+      playerNameInput.focus();
+    }, { passive: false });
+
+    cancelSave.addEventListener("click", (e) => {
+      e.preventDefault();
+      nameModal.style.display = "none";
+    });
+
+    confirmSave.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        confirmSave.disabled = true;
+        confirmSave.textContent = "Kaydediliyor...";
+
+        const name = playerNameInput.value.trim().slice(0, 16);
+        localStorage.setItem("dojo_name", name);
+
+        await saveScore(name, state.score);
+        nameModal.style.display = "none";
+        state.canSave = false;
+
+        await loadLeaderboard();
+      } catch (err) {
+        alert("Kaydedilemedi. Rules / internet kontrol et.");
+      } finally {
+        confirmSave.disabled = false;
+        confirmSave.textContent = "Kaydet";
+      }
+    });
+
+    // İlk yüklemede leaderboard çek
+    loadLeaderboard();
+  </script>
+</body>
+</html>
