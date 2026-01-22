@@ -21,7 +21,6 @@
       -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
-      touch-action: none;
     }
 
     body{
@@ -109,6 +108,7 @@
       cursor:pointer;
       box-shadow: 0 8px 0 rgba(0,0,0,0.22);
       transition: transform .08s ease, background-color .8s ease;
+      touch-action: manipulation;
     }
     #action-pad:active{
       transform: translateY(6px);
@@ -155,7 +155,7 @@
       line-height: 1.25rem;
     }
 
-    /* Leaderboard */
+    /* Leaderboard - MOBILE SCROLL DÜZELTMESİ */
     #leaderboard{
       width: 320px;
       margin-top: 14px;
@@ -164,6 +164,10 @@
       border-radius: 18px;
       padding: 12px;
       box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+      height: 190px; /* Sabit yükseklik */
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; /* Taşmayı engelle */
     }
     #leaderboard h3{
       font-size: 1rem;
@@ -172,6 +176,9 @@
       justify-content:space-between;
       align-items:center;
       gap:10px;
+      flex-shrink: 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
     }
     #leaderboard h3 span{
       opacity:.7;
@@ -183,24 +190,60 @@
       display:flex;
       flex-direction:column;
       gap:6px;
-      max-height: 160px;
-      overflow:auto;
-      padding-right: 4px;
+      overflow-y: scroll; /* scroll yerine auto dene */
+      overflow-x: hidden;
+      padding-right: 8px;
+      flex-grow: 1;
+      margin: 0;
+      
+      /* MOBILE SCROLL için zorunlu ayarlar */
+      -webkit-overflow-scrolling: touch; /* iOS için momentum scroll */
+      overscroll-behavior: contain; /* Bounce efekti */
+      
+      /* Kaydırma çubuğu - HER ZAMAN GÖSTER */
+      scrollbar-width: thin; /* Firefox */
+      scrollbar-color: rgba(0,0,0,0.4) rgba(0,0,0,0.1);
     }
+    
+    /* Webkit (Chrome, Safari, Edge) - KAYDIRMA ÇUBUĞU GÖRÜNSÜN */
+    #lb-list::-webkit-scrollbar {
+      width: 6px;
+      display: block !important; /* ZORLA GÖSTER */
+    }
+    
+    #lb-list::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+      border-radius: 3px;
+      margin: 4px 0;
+    }
+    
+    #lb-list::-webkit-scrollbar-thumb {
+      background-color: rgba(0,0,0,0.4);
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    #lb-list::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(0,0,0,0.5);
+    }
+    
     .lb-item{
       display:flex;
       justify-content:space-between;
       align-items:center;
-      padding: 10px 10px;
+      padding: 10px 12px;
       border-radius: 14px;
       background: rgba(255,255,255,0.65);
       border: 1px solid rgba(0,0,0,0.06);
       font-weight: 800;
+      min-height: 44px;
+      flex-shrink: 0;
     }
     .lb-rank{
       opacity:.7;
       width: 34px;
       text-align:left;
+      flex-shrink: 0;
     }
     .lb-name{
       flex:1;
@@ -213,6 +256,7 @@
     }
     .lb-score{
       font-weight: 900;
+      flex-shrink: 0;
     }
 
     /* Effects */
@@ -501,7 +545,7 @@
       state.active = false;
       state.canSave = true;
 
-      document.getElementById("final-score").textContent = "Skorun: " + state.score;
+      document.getElementById("final-score").textContent = "Skor: " + state.score;
       msgBox.style.display = "flex";
       statusEl.textContent = "BİTTİ";
     }
@@ -557,6 +601,14 @@
 
         lbRefresh.textContent = "güncel";
         netStatus.textContent = "Online ✅";
+        
+        // Listeyi yükledikten sonra scroll olup olmadığını kontrol et
+        setTimeout(() => {
+          if (lbList.scrollHeight > lbList.clientHeight) {
+            console.log("Liste scroll edilebilir");
+          }
+        }, 100);
+        
       } catch (err) {
         console.log(err);
         lbRefresh.textContent = "hata";
@@ -657,6 +709,16 @@
 
     // İlk yüklemede leaderboard çek
     loadLeaderboard();
+    
+    // MOBILE SCROLL FIX: Liste için touch event ekle
+    lbList.addEventListener('touchstart', function(e) {
+      // Sadece touch başlangıcı, scroll için engelleme yok
+    }, { passive: true });
+    
+    lbList.addEventListener('touchmove', function(e) {
+      // Touch move olayını engelleme - scroll çalışsın
+    }, { passive: true });
   </script>
 </body>
 </html>
+  
